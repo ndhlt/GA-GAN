@@ -477,8 +477,8 @@ def training_loop(
 
 		# Perform maintenance tasks once per tick.
 		done = (cur_nimg >= total_kimg * 1000)
-		if (not done) and (cur_tick != 0) and (cur_nimg < tick_start_nimg + kimg_per_tick * 1000):
-			#continue
+	if (not done) and (cur_tick != 0) and (cur_nimg < tick_start_nimg + kimg_per_tick * 1000):
+		continue
 
 		# Print status line, accumulating the same information in stats_collector.
 		tick_end_time = time.time()
