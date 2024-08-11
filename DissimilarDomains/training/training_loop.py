@@ -422,8 +422,8 @@ def training_loop(
     # 再生成
     generated_images = G(mutated_features)
         # Execute training phases.
-    for phase, phase_gen_z, phase_gen_c in zip(phases, all_gen_z, all_gen_c):
-        if batch_idx % phase.interval != 0:
+        for phase, phase_gen_z, phase_gen_c in zip(phases, all_gen_z, all_gen_c):
+            if batch_idx % phase.interval != 0:
             continue
 
             # Initialize gradient accumulation.
