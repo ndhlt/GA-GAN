@@ -408,12 +408,12 @@ def training_loop(
             all_gen_c = torch.from_numpy(np.stack(all_gen_c)).pin_memory().to(device)
             all_gen_c = [phase_gen_c.split(batch_gpu) for phase_gen_c in all_gen_c.split(batch_size)]
 # GAの適用部分をここに挿入
-generated_images = G(all_gen_z, all_gen_c)  # 生成画像
-generated_scores = D(generated_images)  # 識別器によるスコア
+    generated_images = G(all_gen_z, all_gen_c)  # 生成画像
+    generated_scores = D(generated_images)  # 識別器によるスコア
 
     if generated_scores.mean() > threshold:
-    real_features = extract_features(D, phase_real_img)
-    generated_features = extract_features(D, generated_images)
+        real_features = extract_features(D, phase_real_img)
+        generated_features = extract_features(D, generated_images)
 
     # 交叉と突然変異の適用
     new_features = gaussian_crossover(real_features, generated_features)
