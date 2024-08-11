@@ -380,7 +380,7 @@ def training_loop(
         log_histograms(stats_tfevents, G, step=-kimg_per_tick, requires_grad=False)
         log_histograms(stats_tfevents, D, step=-kimg_per_tick, requires_grad=False)
 
-    # Train.
+    # Train.aaa
     if rank == 0:
         print(f'Training for {total_kimg} kimg...')
         print()
@@ -411,7 +411,7 @@ def training_loop(
 generated_images = G(all_gen_z, all_gen_c)  # 生成画像
 generated_scores = D(generated_images)  # 識別器によるスコア
 
-if generated_scores.mean() > threshold:
+    if generated_scores.mean() > threshold:
     real_features = extract_features(D, phase_real_img)
     generated_features = extract_features(D, generated_images)
 
