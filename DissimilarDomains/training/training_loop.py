@@ -599,7 +599,7 @@ def training_loop(
 		tick_start_time = time.time()
 		maintenance_time = tick_start_time - tick_end_time
 		if done:
-			break
+			pritn("loop end")
 
 	# Done.
 	if rank == 0:
