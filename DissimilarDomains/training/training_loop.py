@@ -392,6 +392,51 @@ def training_loop(
 	batch_idx = 0
 	if progress_fn is not None:
 		progress_fn(0, total_kimg)
+# GAの適用部分をここに挿入
+
+	def compute_gradient_penalty(D, real_samples, fake_samples, device):
+    	alpha = torch.rand(real_samples.size(0), 1, 1, 1, device=device)
+    	interpolates = (alpha * real_samples + ((1 - alpha) * fake_samples)).requires_grad_(True)
+   	 	d_interpolates = D(interpolates)
+   	 	fake = torch.ones(d_interpolates.size(), requires_grad=False, device=device)
+    	gradients = torch.autograd.grad(
+        outputs=d_interpolates,
+        inputs=interpolates,
+        grad_outputs=fake,
+        create_graph=True,
+        retain_graph=True,
+        only_inputs=True,
+    	)[0]
+    	gradients = gradients.view(gradients.size(0), -1)
+    	gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean()
+    		return gradient_penalty
+
+	def apply_genetic_algorithm(G, D, phase_real_img, phase_gen_img, device, threshold=0.5):
+   		D_real = D(phase_real_img).detach()
+   		D_fake = D(phase_gen_img)
+    
+    # 似ている画像を抽出
+    similar_imgs_mask = (torch.abs(D_real - D_fake) < threshold)
+    if similar_imgs_mask.sum() == 0:
+        return phase_gen_img
+    
+    similar_real_imgs = phase_real_img[similar_imgs_mask]
+    similar_fake_imgs = phase_gen_img[similar_imgs_mask]
+
+    # 特徴抽出
+    real_features = extract_features(D, similar_real_imgs)
+    fake_features = extract_features(D, similar_fake_imgs)
+
+    # 遺伝的アルゴリズムを適用
+    crossover_features = gaussian_crossover(real_features, fake_features)
+    mutated_features = dynamic_mutation(crossover_features)
+
+    # 新たな画像を生成
+    new_generated_imgs = G(mutated_features)
+    phase_gen_img[similar_imgs_mask] = new_generated_imgs
+    
+    return phase_gen_img
+	
 	while True:
 
 		# Fetch training data.
@@ -407,20 +452,8 @@ def training_loop(
 			]
 			all_gen_c = torch.from_numpy(np.stack(all_gen_c)).pin_memory().to(device)
 			all_gen_c = [phase_gen_c.split(batch_gpu) for phase_gen_c in all_gen_c.split(batch_size)]
-	# GAの適用部分をここに挿入
-	generated_images = G(all_gen_z, all_gen_c)  # 生成画像
-	generated_scores = D(generated_images)  # 識別器によるスコア
+	
 
-	if generated_scores.mean() > threshold:
-		real_features = extract_features(D, phase_real_img)
-		generated_features = extract_features(D, generated_images)
-
-		# 交叉と突然変異の適用
-		new_features = gaussian_crossover(real_features, generated_features)
-		mutated_features = dynamic_mutation(new_features)
-
-		# 再生成
-		generated_images = G(mutated_features)
 		# Execute training phases.
 		for phase, phase_gen_z, phase_gen_c in zip(phases, all_gen_z, all_gen_c):
 			if batch_idx % phase.interval != 0:
