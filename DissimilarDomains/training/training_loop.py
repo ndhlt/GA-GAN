@@ -24,10 +24,6 @@ from torch_utils import misc
 from torch_utils import training_stats
 from torch_utils.ops import conv2d_gradfix
 from torch_utils.ops import grid_sample_gradfix
-
-from GA.feature_extraction import extract_features
-from GA.crossover_mutation import gaussian_crossover, dynamic_mutation
-
 import legacy
 from metrics import metric_main
 
