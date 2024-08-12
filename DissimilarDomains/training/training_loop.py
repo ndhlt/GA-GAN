@@ -410,7 +410,7 @@ def training_loop(
         )[0]
         gradients = gradients.view(gradients.size(0), -1)
         gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean()
-            return gradient_penalty
+        return gradient_penalty
 
     def apply_genetic_algorithm(G, D, phase_real_img, phase_gen_img, device, threshold=0.5):
         D_real = D(phase_real_img).detach()
