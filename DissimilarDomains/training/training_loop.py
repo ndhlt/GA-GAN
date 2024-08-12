@@ -397,8 +397,8 @@ def training_loop(
     def compute_gradient_penalty(D, real_samples, fake_samples, device):
         alpha = torch.rand(real_samples.size(0), 1, 1, 1, device=device)
         interpolates = (alpha * real_samples + ((1 - alpha) * fake_samples)).requires_grad_(True)
-            d_interpolates = D(interpolates)
-            fake = torch.ones(d_interpolates.size(), requires_grad=False, device=device)
+        d_interpolates = D(interpolates)
+        fake = torch.ones(d_interpolates.size(), requires_grad=False, device=device)
         gradients = torch.autograd.grad(
         outputs=d_interpolates,
         inputs=interpolates,
@@ -406,14 +406,15 @@ def training_loop(
         create_graph=True,
         retain_graph=True,
         only_inputs=True,
+
         )[0]
         gradients = gradients.view(gradients.size(0), -1)
         gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean()
             return gradient_penalty
 
     def apply_genetic_algorithm(G, D, phase_real_img, phase_gen_img, device, threshold=0.5):
-           D_real = D(phase_real_img).detach()
-           D_fake = D(phase_gen_img)
+        D_real = D(phase_real_img).detach()
+        D_fake = D(phase_gen_img)
     
     # 似ている画像を抽出
     similar_imgs_mask = (torch.abs(D_real - D_fake) < threshold)
