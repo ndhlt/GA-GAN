@@ -409,32 +409,28 @@ def training_loop(
         gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean()
         return gradient_penalty
 
-    def apply_genetic_algorithm(G, D, phase_real_img, phase_gen_img, device, threshold=0.5):
-    # Real and fake images' discriminator outputs
-        D_real = D(phase_real_img).detach()
-        D_fake = D(phase_gen_img)
+    def apply_genetic_algorithm(G, D, D_real, D_fake, phase_real_img, phase_gen_img, device, threshold=0.5):
+        # 似ている画像を抽出
+        similar_imgs_mask = (torch.abs(D_real - D_fake) < threshold)
+        if similar_imgs_mask.sum() == 0:
+            return phase_gen_img
     
-    # 似ている画像を抽出
-    similar_imgs_mask = (torch.abs(D_real - D_fake) < threshold)
-    if similar_imgs_mask.sum() == 0:
+        similar_real_imgs = phase_real_img[similar_imgs_mask]
+        similar_fake_imgs = phase_gen_img[similar_imgs_mask]
+
+        # 特徴抽出
+        real_features = extract_features(D, similar_real_imgs)
+        fake_features = extract_features(D, similar_fake_imgs)
+
+        # 遺伝的アルゴリズムを適用
+        crossover_features = gaussian_crossover(real_features, fake_features)
+        mutated_features = dynamic_mutation(crossover_features)
+
+        # 新たな画像を生成
+        new_generated_imgs = G(mutated_features)
+        phase_gen_img[similar_imgs_mask] = new_generated_imgs
+    
         return phase_gen_img
-    
-    similar_real_imgs = phase_real_img[similar_imgs_mask]
-    similar_fake_imgs = phase_gen_img[similar_imgs_mask]
-
-    # 特徴抽出
-    real_features = extract_features(D, similar_real_imgs)
-    fake_features = extract_features(D, similar_fake_imgs)
-
-    # 遺伝的アルゴリズムを適用
-    crossover_features = gaussian_crossover(real_features, fake_features)
-    mutated_features = dynamic_mutation(crossover_features)
-
-    # 新たな画像を生成
-    new_generated_imgs = G(mutated_features)
-    phase_gen_img[similar_imgs_mask] = new_generated_imgs
-    
-    return phase_gen_img
     
     while True:
 
@@ -467,9 +463,11 @@ def training_loop(
             # Gを使用してフェーズごとに生成画像を作成
             phase_gen_img = G(phase_gen_z, phase_gen_c)
 
-            # GAシステムを適用
-            phase_gen_img = apply_genetic_algorithm(G, D, phase_real_img, phase_gen_img, device, threshold)
+            D_real = D(phase_real_img).detach()
+            D_fake = D(phase_gen_img)
 
+            # GAシステムを適用
+            phase_gen_img = apply_genetic_algorithm(G, D, D_real, D_fake, phase_real_img, phase_gen_img, device, threshold)
             # Accumulate gradients over multiple rounds.
             for round_idx, (real_img, real_c, gen_z, gen_c) in enumerate(
                     zip(phase_real_img, phase_real_c, phase_gen_z, phase_gen_c)
