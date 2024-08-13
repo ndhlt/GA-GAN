@@ -388,6 +388,12 @@ def training_loop(
     batch_idx = 0
     if progress_fn is not None:
         progress_fn(0, total_kimg)
+
+# Generate images with G
+    phase_gen_img = G(phase_gen_z, phase_gen_c)
+
+    # Apply genetic algorithm to modify similar images
+    phase_gen_img = apply_genetic_algorithm(G, D, phase_real_img, phase_gen_img, device, threshold)  # 修正箇所
 # GAの適用部分をここに挿入
 
     def compute_gradient_penalty(D, real_samples, fake_samples, device):
@@ -408,18 +414,18 @@ def training_loop(
         gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean()
         return gradient_penalty
 
-    def apply_genetic_algorithm(G, D, real_imgs, gen_imgs, device, threshold=0.5):
-        # Real and fake images' discriminator outputs
+    def apply_genetic_algorithm(G, D, phase_real_img, phase_gen_img, device, threshold=0.5):
+    # Real and fake images' discriminator outputs
         D_real = D(phase_real_img).detach()
         D_fake = D(phase_gen_img)
-
+    
     # 似ている画像を抽出
     similar_imgs_mask = (torch.abs(D_real - D_fake) < threshold)
     if similar_imgs_mask.sum() == 0:
-        return gen_imgs
+        return phase_gen_img
     
-    similar_real_imgs = real_imgs[similar_imgs_mask]
-    similar_fake_imgs = gen_imgs[similar_imgs_mask]
+    similar_real_imgs = phase_real_img[similar_imgs_mask]
+    similar_fake_imgs = phase_gen_img[similar_imgs_mask]
 
     # 特徴抽出
     real_features = extract_features(D, similar_real_imgs)
@@ -431,9 +437,9 @@ def training_loop(
 
     # 新たな画像を生成
     new_generated_imgs = G(mutated_features)
-    gen_imgs[similar_imgs_mask] = new_generated_imgs
+    phase_gen_img[similar_imgs_mask] = new_generated_imgs
     
-    return gen_imgs
+    return phase_gen_img
     
     while True:
 
@@ -472,11 +478,6 @@ def training_loop(
                 loss.accumulate_gradients(
                     phase=phase.name, real_img=real_img, real_c=real_c, gen_z=gen_z, gen_c=gen_c, sync=sync, gain=gain
                 )
-    # Generate images with G
-    phase_gen_img = G(phase_gen_z, phase_gen_c)
-
-    # Apply genetic algorithm to modify similar images
-    phase_gen_img = apply_genetic_algorithm(G, D, phase_real_img, phase_gen_img, device)
 
             # Update weights.
     phase.module.requires_grad_(False)
