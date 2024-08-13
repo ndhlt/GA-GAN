@@ -409,6 +409,7 @@ def training_loop(
         return gradient_penalty
 
     def apply_genetic_algorithm(G, D, phase_real_img, phase_gen_img, device, threshold=0.5):
+        # `D_real` と `D_fake` をここで定義
         D_real = D(phase_real_img).detach()
         D_fake = D(phase_gen_img)
     
