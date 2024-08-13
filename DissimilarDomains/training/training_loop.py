@@ -479,14 +479,14 @@ def training_loop(
     phase_gen_img = apply_genetic_algorithm(G, D, phase_real_img, phase_gen_img, device)
 
             # Update weights.
-        phase.module.requires_grad_(False)
-        with torch.autograd.profiler.record_function(phase.name + '_opt'):
-            for param in phase.module.parameters():
-                if param.grad is not None:
-                    misc.nan_to_num(param.grad, nan=0, posinf=1e5, neginf=-1e5, out=param.grad)
-                    phase.opt.step()
-        if phase.end_event is not None:
-            phase.end_event.record(torch.cuda.current_stream(device))
+    phase.module.requires_grad_(False)
+    with torch.autograd.profiler.record_function(phase.name + '_opt'):
+        for param in phase.module.parameters():
+            if param.grad is not None:
+                misc.nan_to_num(param.grad, nan=0, posinf=1e5, neginf=-1e5, out=param.grad)
+                phase.opt.step()
+    if phase.end_event is not None:
+        phase.end_event.record(torch.cuda.current_stream(device))
 
         # Update G_ema.
         with torch.autograd.profiler.record_function('Gema'):
