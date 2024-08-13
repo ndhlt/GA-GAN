@@ -389,11 +389,6 @@ def training_loop(
     if progress_fn is not None:
         progress_fn(0, total_kimg)
 
-# Generate images with G
-    phase_gen_img = G(phase_gen_z, phase_gen_c)
-
-    # Apply genetic algorithm to modify similar images
-    phase_gen_img = apply_genetic_algorithm(G, D, phase_real_img, phase_gen_img, device, threshold)  # 修正箇所
 # GAの適用部分をここに挿入
 
     def compute_gradient_penalty(D, real_samples, fake_samples, device):
@@ -468,6 +463,12 @@ def training_loop(
                 phase.start_event.record(torch.cuda.current_stream(device))
             phase.opt.zero_grad(set_to_none=True)
             set_requires_grad(phase.module, parts=requires_grad_parts[phase.name])
+
+            # Gを使用してフェーズごとに生成画像を作成
+            phase_gen_img = G(phase_gen_z, phase_gen_c)
+
+            # GAシステムを適用
+            phase_gen_img = apply_genetic_algorithm(G, D, phase_real_img, phase_gen_img, device, threshold)
 
             # Accumulate gradients over multiple rounds.
             for round_idx, (real_img, real_c, gen_z, gen_c) in enumerate(
