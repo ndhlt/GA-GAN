@@ -410,8 +410,8 @@ def training_loop(
 
     def apply_genetic_algorithm(G, D, real_imgs, gen_imgs, device, threshold=0.5):
         # Real and fake images' discriminator outputs
-        D_real = D(real_imgs)
-        D_fake = D(gen_imgs)
+        D_real = D(phase_real_img).detach()
+        D_fake = D(phase_gen_img)
 
     # 似ている画像を抽出
     similar_imgs_mask = (torch.abs(D_real - D_fake) < threshold)
