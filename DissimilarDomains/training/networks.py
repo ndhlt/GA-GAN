@@ -548,9 +548,12 @@ def weight_to_weight(self, weight):
                 weights_offset = (self.weights_offset_out + self.weights_offset_in)
             else:
                 weights_offset = sum(
-                    lgetter(lname) @ rgetter(rname) for (lgetter, lname), (rgetter, rname) in
-                    zip(self.weights_offset_out, self.weights_offset_in)
-                ) / len(self.weights_offset_out)
+                lgetter(lname) @ rgetter(rname) for (lgetter, lname), (rgetter, rname) in
+                zip(self.weights_offset_out, self.weights_offset_in)
+                )
+                if isinstance(weights_offset, tuple):
+                    weights_offset = weights_offset[0]
+                    weights_offset /= len(self.weights_offset_out)
         else:
             weights_offset = self.weights_offset
         if self.affine_weights_domain_modulation_parametrization.endswith('additive'):
@@ -602,9 +605,17 @@ def modulated_conv2d(
 ):
     batch_size = x.shape[0]
     out_channels, in_channels, kh, kw = weight.shape
-    misc.assert_shape(weight, [out_channels, in_channels, kh, kw])  # [OIkk]
-    misc.assert_shape(x, [batch_size, in_channels, None, None])  # [NIHW]
-    misc.assert_shape(styles, [batch_size, in_channels])  # [NI]
+        if isinstance(weight, tuple):
+            weight = weight[0]
+        misc.assert_shape(weight, [out_channels, in_channels, kh, kw])
+
+        if isinstance(x, tuple):
+            x = x[0]
+        misc.assert_shape(x, [batch_size, in_channels, None, None])
+
+        if isinstance(styles, tuple):
+            styles = styles[0]
+        misc.assert_shape(styles, [batch_size, in_channels])
 
     # Pre-normalize inputs to avoid FP16 overflow.
     if x.dtype == torch.float16 and demodulate:
@@ -1044,12 +1055,14 @@ class SynthesisBlock(torch.nn.Module):
 
         # ToRGB.
         if img is not None:
-            misc.assert_shape(img, [None, self.img_channels, self.resolution // 2, self.resolution // 2])
-            img = upfirdn2d.upsample2d(img, self.resample_filter)
+            if isinstance(img, tuple):
+            img = img[0]  # タプルの場合は最初の要素を使用
+        misc.assert_shape(img, [None, self.img_channels, self.resolution // 2, self.resolution // 2])
+        img = upfirdn2d.upsample2d(img, self.resample_filter)
         if self.is_last or self.architecture == 'skip':
-            y = self.torgb(x, next(w_iter), fused_modconv=fused_modconv, **layer_kwargs)
-            y = y.to(dtype=torch.float32, memory_format=torch.contiguous_format)
-            img = img.add_(y) if img is not None else y
+        y = self.torgb(x, next(w_iter), fused_modconv=fused_modconv, **layer_kwargs)
+        y = y.to(dtype=torch.float32, memory_format=torch.contiguous_format)
+        img = img.add_(y) if img is not None else y
 
         assert x.dtype == dtype
         assert img is None or img.dtype == torch.float32

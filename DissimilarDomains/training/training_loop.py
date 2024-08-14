@@ -471,9 +471,13 @@ def training_loop(
         for z, c in zip(phase_gen_z, phase_gen_c):
             phase_gen_img = G(z, c)  # 各 z, c ペアごとに生成
 
-        # Discriminatorの予測を取得
         D_real_output = D(phase_real_img, phase_real_c)
         D_fake_output = D(phase_gen_img, c)
+
+        if isinstance(D_real_output, tuple):
+            D_real_output = D_real_output[0]  # タプルの最初の要素を使用
+        if isinstance(D_fake_output, tuple):
+            D_fake_output = D_fake_output[0]  # タプルの最初の要素を使用
 
         # D_real_outputやD_fake_outputがタプルの場合、それぞれ最初の要素を使用
         if isinstance(D_real_output, tuple):
@@ -486,8 +490,7 @@ def training_loop(
         D_fake = D_fake_output.detach()
 
         # GAシステムを適用
-        phase_gen_img = apply_genetic_algorithm(G, D, D_real, D_fake, phase_real_img, phase_gen_img, device, threshold)
-    # 他の処理が必要であれば、ここに追加
+        phase_gen_img = apply_genetic_algorithm(G, D, D_real_output, D_fake_output, phase_real_img, phase_gen_img, device, threshold)    # 他の処理が必要であれば、ここに追加
             # Accumulate gradients over multiple rounds.
         for round_idx, (real_img, real_c, gen_z, gen_c) in enumerate(
             zip(phase_real_img, phase_real_c, phase_gen_z, phase_gen_c)
