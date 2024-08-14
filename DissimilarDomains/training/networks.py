@@ -605,17 +605,17 @@ def modulated_conv2d(
 ):
     batch_size = x.shape[0]
     out_channels, in_channels, kh, kw = weight.shape
-        if isinstance(weight, tuple):
-            weight = weight[0]
-        misc.assert_shape(weight, [out_channels, in_channels, kh, kw])
+    if isinstance(weight, tuple):
+        weight = weight[0]
+    misc.assert_shape(weight, [out_channels, in_channels, kh, kw])
 
-        if isinstance(x, tuple):
-            x = x[0]
-        misc.assert_shape(x, [batch_size, in_channels, None, None])
+    if isinstance(x, tuple):
+        x = x[0]
+    misc.assert_shape(x, [batch_size, in_channels, None, None])
 
-        if isinstance(styles, tuple):
-            styles = styles[0]
-        misc.assert_shape(styles, [batch_size, in_channels])
+    if isinstance(styles, tuple):
+        styles = styles[0]
+    misc.assert_shape(styles, [batch_size, in_channels])
 
     # Pre-normalize inputs to avoid FP16 overflow.
     if x.dtype == torch.float16 and demodulate:
