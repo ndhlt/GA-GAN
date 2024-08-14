@@ -468,12 +468,12 @@ def training_loop(
 
             # Gを使用してフェーズごとに生成画像を作成
         for z, c in zip(phase_gen_z, phase_gen_c):
-        phase_gen_img = G(z, c)  # 各 z, c ペアごとに生成
+            phase_gen_img = G(z, c)  # 各 z, c ペアごとに生成
 
-        D_real = D(phase_real_img).detach()
-        D_fake = D(phase_gen_img)
+            D_real = D(phase_real_img).detach()
+            D_fake = D(phase_gen_img)
 
-        # GAシステムを適用
+            # GAシステムを適用
         phase_gen_img = apply_genetic_algorithm(G, D, D_real, D_fake, phase_real_img, phase_gen_img, device, threshold)
     
     # 他の処理が必要であれば、ここに追加
