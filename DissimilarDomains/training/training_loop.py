@@ -412,6 +412,7 @@ def training_loop(
     def apply_genetic_algorithm(G, D, D_real, D_fake, phase_real_img, phase_gen_img, device, threshold=0.5):
         # 似ている画像を抽出
         similar_imgs_mask = (torch.abs(D_real - D_fake) < threshold)
+
         if similar_imgs_mask.sum() == 0:
             return phase_gen_img
     
@@ -466,17 +467,26 @@ def training_loop(
             phase.opt.zero_grad(set_to_none=True)
             set_requires_grad(phase.module, parts=requires_grad_parts[phase.name])
 
-        # Gを使用してフェーズごとに生成画像を作成
+       # Gを使用してフェーズごとに生成画像を作成
         for z, c in zip(phase_gen_z, phase_gen_c):
             phase_gen_img = G(z, c)  # 各 z, c ペアごとに生成
 
         # Discriminatorの予測を取得
-        D_real = D(phase_real_img, phase_real_c).detach()  # 修正: c を追加
-        D_fake = D(phase_gen_img, c)  # 修正: c を追加
+        D_real_output = D(phase_real_img, phase_real_c)
+        D_fake_output = D(phase_gen_img, c)
+
+        # D_real_outputやD_fake_outputがタプルの場合、それぞれ最初の要素を使用
+        if isinstance(D_real_output, tuple):
+            D_real_output = D_real_output[0]
+        if isinstance(D_fake_output, tuple):
+            D_fake_output = D_fake_output[0]
+
+        # detach() メソッドを呼び出して、D_real と D_fake を更新
+        D_real = D_real_output.detach()
+        D_fake = D_fake_output.detach()
 
         # GAシステムを適用
         phase_gen_img = apply_genetic_algorithm(G, D, D_real, D_fake, phase_real_img, phase_gen_img, device, threshold)
-    
     # 他の処理が必要であれば、ここに追加
             # Accumulate gradients over multiple rounds.
         for round_idx, (real_img, real_c, gen_z, gen_c) in enumerate(
