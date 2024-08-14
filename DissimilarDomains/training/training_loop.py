@@ -440,13 +440,19 @@ def training_loop(
             phase_real_img = (phase_real_img.to(device).to(torch.float32) / 127.5 - 1).split(batch_gpu)
             phase_real_c = phase_real_c.to(device).split(batch_gpu)
             all_gen_z = torch.randn([len(phases) * batch_size, G.z_dim], device=device)
-            all_gen_z = [phase_gen_z.split(batch_gpu) for phase_gen_z in all_gen_z.split(batch_size)]
+            all_gen_z = all_gen_z.split(batch_size)  # 分割する
+            # 修正部分: all_gen_zをさらにbatch_gpu単位で分割する
+            all_gen_z = [z.split(batch_gpu) for z in all_gen_z]  # さらにbatch_gpuごとに分割
+
+         # 修正部分: all_gen_cをbatch_size単位で分割する
             all_gen_c = [
                 training_set.get_label(np.random.randint(len(training_set)))
                 for _ in range(len(phases) * batch_size)
             ]
             all_gen_c = torch.from_numpy(np.stack(all_gen_c)).pin_memory().to(device)
-            all_gen_c = [phase_gen_c.split(batch_gpu) for phase_gen_c in all_gen_c.split(batch_size)]
+            all_gen_c = all_gen_c.split(batch_size)  # 分割する
+            # 修正部分: all_gen_cをさらにbatch_gpu単位で分割する
+            all_gen_c = [c.split(batch_gpu) for c in all_gen_c]  # さらにbatch_gpuごとに分割
     
 
         # Execute training phases.
