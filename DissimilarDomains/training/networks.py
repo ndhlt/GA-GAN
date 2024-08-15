@@ -1064,8 +1064,10 @@ class SynthesisBlock(torch.nn.Module):
         if self.is_last or self.architecture == 'skip':
             y = self.torgb(x, next(w_iter), fused_modconv=fused_modconv, **layer_kwargs)
             y = y.to(dtype=torch.float32, memory_format=torch.contiguous_format)
-            img = img.add_(y) if img is not None 
-            else y
+            if img is not None:
+                img = img.add_(y)
+            else:
+                img = y
 
         assert x.dtype == dtype
         assert img is None or img.dtype == torch.float32
