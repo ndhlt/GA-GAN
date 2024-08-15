@@ -1057,7 +1057,7 @@ class SynthesisBlock(torch.nn.Module):
         # ToRGB.
         if img is not None:
             if isinstance(img, tuple):
-            img = img[0]  # タプルの場合は最初の要素を使用
+                img = img[0]  # タプルの場合は最初の要素を使用
         misc.assert_shape(img, [None, self.img_channels, self.resolution // 2, self.resolution // 2])
         img = upfirdn2d.upsample2d(img, self.resample_filter)
         if self.is_last or self.architecture == 'skip':
