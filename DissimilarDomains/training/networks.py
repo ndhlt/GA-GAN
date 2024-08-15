@@ -1058,12 +1058,14 @@ class SynthesisBlock(torch.nn.Module):
         if img is not None:
             if isinstance(img, tuple):
                 img = img[0]  # タプルの場合は最初の要素を使用
+
         misc.assert_shape(img, [None, self.img_channels, self.resolution // 2, self.resolution // 2])
         img = upfirdn2d.upsample2d(img, self.resample_filter)
         if self.is_last or self.architecture == 'skip':
-        y = self.torgb(x, next(w_iter), fused_modconv=fused_modconv, **layer_kwargs)
-        y = y.to(dtype=torch.float32, memory_format=torch.contiguous_format)
-        img = img.add_(y) if img is not None else y
+            y = self.torgb(x, next(w_iter), fused_modconv=fused_modconv, **layer_kwargs)
+            y = y.to(dtype=torch.float32, memory_format=torch.contiguous_format)
+            img = img.add_(y) if img is not None 
+        else y
 
         assert x.dtype == dtype
         assert img is None or img.dtype == torch.float32
