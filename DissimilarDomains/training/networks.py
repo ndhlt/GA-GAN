@@ -605,6 +605,7 @@ def modulated_conv2d(
 ):
     batch_size = x.shape[0]
     out_channels, in_channels, kh, kw = weight.shape
+
     if isinstance(weight, tuple):
         weight = weight[0]
     misc.assert_shape(weight, [out_channels, in_channels, kh, kw])
